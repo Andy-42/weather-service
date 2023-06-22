@@ -4,7 +4,7 @@ import io.circe.syntax.EncoderOps
 import org.http4s.circe._
 import org.http4s.client.Client
 import org.http4s.dsl.io._
-import org.http4s.{EntityDecoder, HttpRoutes, Method, Request}
+import org.http4s.{EntityDecoder, HttpRoutes, Method, Request, Response}
 
 case class CurrentWeatherService(config: OpenWeatherConfig, client: Client[IO]) {
 
@@ -26,9 +26,6 @@ case class CurrentWeatherService(config: OpenWeatherConfig, client: Client[IO]) 
       import OpenWeatherDataDecode.oneCallApiResponseDecoder
       implicit val oneCallApiResponseEntityDecoder: EntityDecoder[IO, OneCallResponse] = jsonOf[IO, OneCallResponse]
 
-      for {
-        oneCallResponse <- client.expect[OneCallResponse](oneCallApiRequest)
-        currentWeatherServiceResponse <- Ok(oneCallResponse.toCurrentWeather.asJson)
-      } yield currentWeatherServiceResponse
+      Ok(client.expect[OneCallResponse](oneCallApiRequest).map(_.toCurrentWeather.asJson))
   }
 }
