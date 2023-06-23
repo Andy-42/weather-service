@@ -19,12 +19,12 @@ case class CurrentWeatherService(config: OpenWeatherConfig, client: Client[IO]) 
   val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
 
     case GET -> Root / "current-weather" :?
-      LongitudeQueryParamMatcher(lonParam) +& LatitudeQueryParamMatcher(latParam) =>
+      LatitudeQueryParamMatcher(latParam) +& LongitudeQueryParamMatcher(lonParam) =>
 
       (latParam, lonParam)
         .mapN(currentWeather)
         .valueOr { parseFailures =>
-          IO(Response(status = BadRequest).withEntity(parseFailures.toList.map(_.sanitized).mkString("\n")))
+          IO(Response(BadRequest).withEntity(parseFailures.toList.map(_.sanitized).mkString("\n")))
         }
   }
 
