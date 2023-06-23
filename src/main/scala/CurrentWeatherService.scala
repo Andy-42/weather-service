@@ -1,12 +1,12 @@
-import cats.data.Validated.{Invalid, Valid}
 import cats.effect._
+import cats.syntax.all._
 import io.circe.generic.auto._
 import io.circe.syntax.EncoderOps
 import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.circe._
 import org.http4s.client.Client
 import org.http4s.dsl.io._
-import org.http4s.{HttpRoutes, Method, Request}
+import org.http4s.{HttpRoutes, Method, Request, Response}
 
 case class CurrentWeatherService(config: OpenWeatherConfig, client: Client[IO]) {
 
@@ -18,24 +18,27 @@ case class CurrentWeatherService(config: OpenWeatherConfig, client: Client[IO]) 
 
   val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
 
-    case GET -> Root / "current-weather" :? LongitudeQueryParamMatcher(lon) +& LatitudeQueryParamMatcher(lat) =>
+    case GET -> Root / "current-weather" :?
+      LongitudeQueryParamMatcher(lonParam) +& LatitudeQueryParamMatcher(latParam) =>
 
-      (lat, lon) match {
-        case (Valid(lat), Valid(lon)) =>
-          val oneCallApiRequest = Request[IO](
-            method = Method.GET,
-            uri = oneCallApiUri.withQueryParam("lat", lat).withQueryParam("lon", lon)
-          )
+      (latParam, lonParam)
+        .mapN(currentWeather)
+        .valueOr { parseFailures =>
+          IO(Response(status = BadRequest).withEntity(parseFailures.toList.map(_.sanitized).mkString("\n")))
+        }
+  }
 
-          import OpenWeatherDataDecode.oneCallApiResponseDecoder
+  private def currentWeather(lat: Double, lon: Double): IO[Response[IO]] = {
 
-          client
-            .expect[OneCallResponse](oneCallApiRequest)
-            .flatMap { oneCallResponse => Ok(oneCallResponse.toCurrentWeather.asJson) }
+    val oneCallApiRequest = Request[IO](
+      method = Method.GET,
+      uri = oneCallApiUri.withQueryParam("lat", lat).withQueryParam("lon", lon)
+    )
 
-        case (Valid(_), Invalid(e)) => BadRequest(e.head.sanitized)
-        case (Invalid(e), Valid(_)) => BadRequest(e.head.sanitized)
-        case (Invalid(e1), Invalid(e2)) => BadRequest(e1.head.sanitized + "\n" + e2.head.sanitized)
-      }
+    import OpenWeatherDataDecode.oneCallApiResponseDecoder
+
+    client
+      .expect[OneCallResponse](oneCallApiRequest)
+      .flatMap(oneCallResponse => Ok(oneCallResponse.toCurrentWeather.asJson))
   }
 }
