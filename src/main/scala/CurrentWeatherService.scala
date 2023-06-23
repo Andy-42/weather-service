@@ -2,11 +2,11 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.effect._
 import io.circe.generic.auto._
 import io.circe.syntax.EncoderOps
+import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.circe._
 import org.http4s.client.Client
 import org.http4s.dsl.io._
-import org.http4s.{EntityDecoder, HttpRoutes, Method, Request}
-import org.http4s.circe.CirceEntityDecoder._
+import org.http4s.{HttpRoutes, Method, Request}
 
 case class CurrentWeatherService(config: OpenWeatherConfig, client: Client[IO]) {
 

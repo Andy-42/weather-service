@@ -1,5 +1,5 @@
 import cats.syntax.either._
-import org.http4s.dsl.io.{QueryParamDecoderMatcher, ValidatingQueryParamDecoderMatcher}
+import org.http4s.dsl.io.ValidatingQueryParamDecoderMatcher
 import org.http4s.{ParseFailure, QueryParamDecoder}
 
 object GeoDecoders {
