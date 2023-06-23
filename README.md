@@ -51,7 +51,7 @@ All the code and resources are in the root package.
 The main Scala implementation files in the project are:
 * **AppConfig** - Decoding and validating configuration using PureConfig.
 * **CurrentWeatherService** - The implementation of the `weather-service` route that
-retrieves data from the Open Weather One Call API service and transforms it to the
+retrieves data from the Open Weather One Call API service and transforms it to
 the service's current weather summary representation.
 * **OpenWeatherData** - The binding of (a subset of) the Open Weather One Call data
 to case class representation, as well as a transformation of that representation to

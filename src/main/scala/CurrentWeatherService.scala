@@ -19,9 +19,9 @@ case class CurrentWeatherService(config: OpenWeatherConfig, client: Client[IO]) 
   val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
 
     case GET -> Root / "current-weather" :?
-      LatitudeQueryParamMatcher(latParam) +& LongitudeQueryParamMatcher(lonParam) =>
+      LatitudeQueryParamMatcher(lat) +& LongitudeQueryParamMatcher(lon) =>
 
-      (latParam, lonParam)
+      (lat, lon)
         .mapN(currentWeather)
         .valueOr { parseFailures =>
           IO(Response(BadRequest).withEntity(parseFailures.toList.map(_.sanitized).mkString("\n")))
