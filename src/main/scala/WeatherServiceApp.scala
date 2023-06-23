@@ -4,6 +4,7 @@ import org.http4s.client.Client
 import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Server
+import org.http4s.server.middleware.ErrorHandling
 
 object WeatherServiceApp extends IOApp {
 
@@ -17,7 +18,7 @@ object WeatherServiceApp extends IOApp {
       .default[IO]
       .withHost(config.host)
       .withPort(config.port)
-      .withHttpApp(routes.orNotFound)
+      .withHttpApp(ErrorHandling.httpRoutes(routes).orNotFound)
       .build
 
   override def run(args: List[String]): IO[ExitCode] =

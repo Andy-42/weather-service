@@ -61,11 +61,7 @@ the result format.
 
 ## Limitations
 
-The error handling is rudimentary, and an obvious next step would be to add an
-error handler. For example, the `lat` and `lon` query string parameters are validated,
-but without an error handler, the validation messages are not propagated back to the
-caller. Similarly, internal errors (which would not be returned to the caller) are
-not logged.
+The handling of validated query parameters (in `CurrentWeatherService`) seems awkward.
 
 There is limited unit testing: a single unit test in `OpenWeatherDataSpec`.
 This is useful for documenting this project's interpretation of the data returned

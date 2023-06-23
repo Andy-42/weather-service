@@ -1,10 +1,12 @@
+import cats.data.Validated.{Invalid, Valid}
 import cats.effect._
 import io.circe.generic.auto._
 import io.circe.syntax.EncoderOps
 import org.http4s.circe._
 import org.http4s.client.Client
 import org.http4s.dsl.io._
-import org.http4s.{EntityDecoder, HttpRoutes, Method, Request, Response}
+import org.http4s.{EntityDecoder, HttpRoutes, Method, Request}
+import org.http4s.circe.CirceEntityDecoder._
 
 case class CurrentWeatherService(config: OpenWeatherConfig, client: Client[IO]) {
 
@@ -16,16 +18,24 @@ case class CurrentWeatherService(config: OpenWeatherConfig, client: Client[IO]) 
 
   val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
 
-    case GET -> Root / "current-weather" :? LongitudeQueryParamDecoder(lon) +& LatitudeQueryParamMatcher(lat) =>
+    case GET -> Root / "current-weather" :? LongitudeQueryParamMatcher(lon) +& LatitudeQueryParamMatcher(lat) =>
 
-      val oneCallApiRequest = Request[IO](
-        method = Method.GET,
-        uri = oneCallApiUri.withQueryParam("lat", lat).withQueryParam("lon", lon)
-      )
+      (lat, lon) match {
+        case (Valid(lat), Valid(lon)) =>
+          val oneCallApiRequest = Request[IO](
+            method = Method.GET,
+            uri = oneCallApiUri.withQueryParam("lat", lat).withQueryParam("lon", lon)
+          )
 
-      import OpenWeatherDataDecode.oneCallApiResponseDecoder
-      implicit val oneCallApiResponseEntityDecoder: EntityDecoder[IO, OneCallResponse] = jsonOf[IO, OneCallResponse]
+          import OpenWeatherDataDecode.oneCallApiResponseDecoder
 
-      Ok(client.expect[OneCallResponse](oneCallApiRequest).map(_.toCurrentWeather.asJson))
+          client
+            .expect[OneCallResponse](oneCallApiRequest)
+            .flatMap { oneCallResponse => Ok(oneCallResponse.toCurrentWeather.asJson) }
+
+        case (Valid(_), Invalid(e)) => BadRequest(e.head.sanitized)
+        case (Invalid(e), Valid(_)) => BadRequest(e.head.sanitized)
+        case (Invalid(e1), Invalid(e2)) => BadRequest(e1.head.sanitized + "\n" + e2.head.sanitized)
+      }
   }
 }
