@@ -8,6 +8,18 @@ import org.http4s.server.middleware.ErrorHandling
 
 object WeatherServiceApp extends IOApp {
 
+  override def run(args: List[String]): IO[ExitCode] =
+    for {
+      appConfig <- AppConfig.fromDefaultApplicationResource
+
+      _ <- makeClient.use { client =>
+
+        val currentWeatherService = CurrentWeatherService(appConfig.openWeather, client)
+
+        makeServer(appConfig.httpServer, currentWeatherService.routes).use { _ => IO.never }
+      }
+    } yield ExitCode.Success
+
   private def makeClient: Resource[IO, Client[IO]] =
     EmberClientBuilder
       .default[IO]
@@ -20,16 +32,4 @@ object WeatherServiceApp extends IOApp {
       .withPort(config.port)
       .withHttpApp(ErrorHandling.httpRoutes(routes).orNotFound)
       .build
-
-  override def run(args: List[String]): IO[ExitCode] =
-    for {
-      appConfig <- AppConfig.fromDefaultApplicationResource
-
-      _ <- makeClient.use { client =>
-
-        val currentWeatherService = CurrentWeatherService(appConfig.openWeather, client)
-
-        makeServer(appConfig.httpServer, currentWeatherService.routes).use { _ => IO.never }
-      }
-    } yield ExitCode.Success
 }

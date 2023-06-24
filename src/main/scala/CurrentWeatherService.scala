@@ -10,12 +10,6 @@ import org.http4s.{HttpRoutes, Method, Request, Response}
 
 case class CurrentWeatherService(config: OpenWeatherConfig, client: Client[IO]) {
 
-  private val oneCallApiUri = config.oneCallApiUri
-    .withQueryParam("units", "metric")
-    .withQueryParam("lang", "en")
-    .withQueryParam("appid", config.apiKey)
-    .withQueryParam("exclude", "minutely,hourly,daily")
-
   val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
 
     case GET -> Root / "current-weather" :?
@@ -27,6 +21,12 @@ case class CurrentWeatherService(config: OpenWeatherConfig, client: Client[IO]) 
           IO(Response(BadRequest).withEntity(parseFailures.toList.map(_.sanitized).mkString("\n")))
         }
   }
+
+  private val oneCallApiUri = config.oneCallApiUri
+    .withQueryParam("units", "metric")
+    .withQueryParam("lang", "en")
+    .withQueryParam("appid", config.apiKey)
+    .withQueryParam("exclude", "minutely,hourly,daily")
 
   private def currentWeather(lat: Double, lon: Double): IO[Response[IO]] = {
 
