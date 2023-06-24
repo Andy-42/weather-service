@@ -19,10 +19,12 @@ case class OneCallResponse(current: Current, alerts: Option[List[Alert]]) {
       conditions = current.weather.head.main,
 
       temperature =
-        if (current.feels_like >= 30) "Hot"
-        else if (current.feels_like >= 20) "Pleasant"
+        if (current.feels_like > 30) "Hot"
+        else if (current.feels_like > 25) "Warm"
+        else if (current.feels_like > 20) "Pleasant"
         else if (current.feels_like > 10) "Cool"
-        else "Cold",
+        else if (current.feels_like > 0) "Cold"
+        else "Freezing",
 
       alerts = alerts.fold(List.empty[WeatherAlert])(
         _.map(alert =>
