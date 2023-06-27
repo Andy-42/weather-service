@@ -1,7 +1,7 @@
 import cats.effect.IO
 import cats.implicits._
 import com.comcast.ip4s.{Host, Port}
-import org.http4s.Uri
+import org.http4s.{ParseFailure, Uri}
 import pureconfig._
 import pureconfig.error._
 import pureconfig.generic.ProductHint
@@ -21,33 +21,27 @@ object AppConfig {
   @unused
   private implicit val hostReader: ConfigReader[Host] = ConfigReader.fromCursor[Host] { cur =>
     cur.asString.flatMap { str =>
-      Host.fromString(str) match {
-        case Some(host) => host.asRight
-        case None => cur.failed(CannotConvert(str, "Host", s"$str is not a valid Host"))
-      }
+      Host.fromString(str)
+        .fold[ConfigReader.Result[Host]](cur.failed(CannotConvert(str, "Host", s"$str is not a valid Host")))(_.asRight)
     }
   }
 
   @unused
   private implicit val portReader: ConfigReader[Port] = ConfigReader.fromCursor[Port] { cur =>
     cur.asString.flatMap { str =>
-      Port.fromString(str) match {
-        case Some(port) => port.asRight
-        case None => cur.failed(CannotConvert(str, "Port", s"$str is not a valid Port"))
-      }
+      Port.fromString(str)
+        .fold[ConfigReader.Result[Port]](cur.failed(CannotConvert(str, "Port", s"$str is not a valid Port")))(_.asRight)
     }
   }
 
   @unused
   private implicit val uriReader: ConfigReader[Uri] = ConfigReader.fromCursor[Uri] { cur =>
     cur.asString.flatMap { str =>
-      Uri.fromString(str) match {
-        case Right(uri) => uri.asRight
-        case Left(parseFailure) =>
-          cur.failed(CannotConvert(str, "Uri", s"$str is not a valid Uri: ${parseFailure.message}"))
-      }
+      Uri.fromString(str)
+        .fold(parseFailure => cur.failed(CannotConvert(str, "Uri", parseFailure.message)), _.asRight)
     }
   }
+
 
   @unused
   private implicit def hint[A]: ProductHint[A] = ProductHint[A](ConfigFieldMapping(CamelCase, KebabCase))
